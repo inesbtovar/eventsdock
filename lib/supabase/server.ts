@@ -1,9 +1,7 @@
-// lib/supabase/server.ts
 import { createServerClient } from '@supabase/ssr'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
-// Use this in Server Components and Server Actions
 export async function createClient() {
   const cookieStore = await cookies()
 
@@ -20,17 +18,13 @@ export async function createClient() {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
             )
-          } catch {
-            // Ignore errors in Server Components (can't set cookies there)
-          }
+          } catch {}
         },
       },
     }
   )
 }
 
-// Use this in API routes that need to bypass RLS (admin operations)
-// Never expose this on the client side
 export function createAdminClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

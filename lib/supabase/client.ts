@@ -1,5 +1,3 @@
-// lib/supabase/client.ts
-// Use this in 'use client' components only
 import { createBrowserClient } from '@supabase/ssr'
 
 export function createClient() {

@@ -2,7 +2,7 @@
 // app/dashboard/[eventId]/website/page.tsx
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -12,36 +12,36 @@ const TEMPLATES = [
     name: 'Elegant',
     description: 'White & gold, timeless serif',
     preview: '🤍',
-    colors: ['#faf9f7', '#1c1917', '#b8860b'],
   },
   {
     id: 'rustic',
     name: 'Rustic',
     description: 'Warm earthy tones, vintage feel',
     preview: '🌿',
-    colors: ['#f5f0e8', '#78564e', '#c8b89a'],
   },
   {
     id: 'modern',
     name: 'Modern',
     description: 'Bold, black & white, graphic',
     preview: '◼',
-    colors: ['#000000', '#ffffff', '#333'],
   },
 ]
 
 export default function WebsitePage() {
-  const { eventId } = useParams()
-  const router = useRouter()
+  // useParams() is correct for client components — no async needed
+  const params = useParams()
+  const eventId = params.eventId as string
+
   const supabase = createClient()
 
-  const [event, setEvent] = useState<any>(null)
+  const [event, setEvent]       = useState<any>(null)
   const [template, setTemplate] = useState('elegant')
-  const [config, setConfig] = useState<any>({})
-  const [saving, setSaving] = useState(false)
+  const [config, setConfig]     = useState<any>({})
+  const [saving, setSaving]     = useState(false)
   const [publishing, setPublishing] = useState(false)
 
   useEffect(() => {
+    if (!eventId) return
     supabase
       .from('events')
       .select('*')
@@ -84,31 +84,42 @@ export default function WebsitePage() {
     setPublishing(false)
   }
 
-  if (!event) return <div className="min-h-screen flex items-center justify-center text-stone-400">Loading...</div>
+  if (!event) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-stone-50">
+        <div className="w-6 h-6 border-2 border-stone-300 border-t-stone-700 rounded-full animate-spin" />
+      </div>
+    )
+  }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const publicUrl = `${appUrl}/event/${event.slug}`
 
   return (
     <div className="min-h-screen bg-stone-50">
+
+      {/* Navbar */}
       <nav className="bg-white border-b border-stone-200 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center gap-4">
-          <Link href={`/dashboard/${eventId}`} className="text-stone-400 hover:text-stone-700 text-sm">
+          <Link
+            href={`/dashboard/${eventId}`}
+            className="text-stone-400 hover:text-stone-700 text-sm transition-colors"
+          >
             ← Back
           </Link>
-          <span className="text-stone-800 font-semibold">Edit Website</span>
+          <span className="text-stone-800 font-semibold text-sm">Edit Website</span>
           <div className="ml-auto flex gap-3">
             <button
               onClick={save}
               disabled={saving}
-              className="text-sm border border-stone-200 px-4 py-2 rounded-lg hover:bg-stone-50 disabled:opacity-50"
+              className="text-sm border border-stone-200 px-4 py-2 rounded-lg hover:bg-stone-50 disabled:opacity-50 transition-colors"
             >
               {saving ? 'Saving...' : 'Save'}
             </button>
             <button
               onClick={togglePublish}
               disabled={publishing}
-              className={`text-sm px-4 py-2 rounded-lg font-medium disabled:opacity-50 ${
+              className={`text-sm px-4 py-2 rounded-lg font-medium disabled:opacity-50 transition-colors ${
                 event.is_published
                   ? 'bg-red-100 text-red-700 hover:bg-red-200'
                   : 'bg-green-600 text-white hover:bg-green-700'
@@ -121,8 +132,10 @@ export default function WebsitePage() {
       </nav>
 
       <main className="max-w-5xl mx-auto px-6 py-8 grid sm:grid-cols-5 gap-8">
+
         {/* Left: controls */}
         <div className="sm:col-span-2 space-y-6">
+
           {/* Template picker */}
           <div>
             <h2 className="font-semibold text-stone-900 mb-3">Template</h2>
@@ -183,13 +196,14 @@ export default function WebsitePage() {
             </div>
           </div>
 
-          {/* Public link */}
+          {/* Published link */}
           {event.is_published && (
             <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <p className="text-xs text-green-700 font-medium mb-1">✅ Published at:</p>
+              <p className="text-xs text-green-700 font-medium mb-1">✅ Live at:</p>
               <a
                 href={publicUrl}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="text-xs text-green-600 underline break-all"
               >
                 {publicUrl}
@@ -201,27 +215,33 @@ export default function WebsitePage() {
         {/* Right: preview */}
         <div className="sm:col-span-3">
           <h2 className="font-semibold text-stone-900 mb-3">Preview</h2>
-          <div className="rounded-xl overflow-hidden border border-stone-200 shadow-sm bg-white" style={{ height: 500 }}>
-            <iframe
-              src={publicUrl}
-              className="w-full h-full"
-              title="Preview"
-              key={`${template}-${JSON.stringify(config)}`}
-            />
-            {!event.is_published && (
-              <div className="absolute inset-0 flex items-center justify-center bg-stone-100 rounded-xl">
-                <div className="text-center">
-                  <p className="text-4xl mb-2">👁</p>
-                  <p className="text-stone-500 text-sm">Publish to preview</p>
-                  <p className="text-stone-400 text-xs">Or open your event link after publishing</p>
+          <div
+            className="relative rounded-xl overflow-hidden border border-stone-200 shadow-sm bg-stone-100"
+            style={{ height: 520 }}
+          >
+            {event.is_published ? (
+              <iframe
+                src={publicUrl}
+                className="w-full h-full"
+                title="Event preview"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center px-6">
+                  <p className="text-4xl mb-3">👁</p>
+                  <p className="text-stone-600 font-medium text-sm">Publish to see preview</p>
+                  <p className="text-stone-400 text-xs mt-1">
+                    Save your changes then click Publish
+                  </p>
                 </div>
               </div>
             )}
           </div>
           <p className="text-xs text-stone-400 mt-2 text-center">
-            Save changes and publish to see the live site
+            Save then publish to see your live site
           </p>
         </div>
+
       </main>
     </div>
   )

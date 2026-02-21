@@ -1,18 +1,20 @@
 // app/event/[slug]/page.tsx
-// This is the public event website guests see
 import { createAdminClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import TemplateElegant from '@/components/templates/TemplateElegant'
 import TemplateRustic from '@/components/templates/TemplateRustic'
 import TemplateModern from '@/components/templates/TemplateModern'
 
-export default async function PublicEventPage({ params }: { params: { slug: string } }) {
+type Props = { params: Promise<{ slug: string }> }
+
+export default async function PublicEventPage({ params }: Props) {
+  const { slug } = await params
   const admin = createAdminClient()
 
   const { data: event } = await admin
     .from('events')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .eq('is_published', true)
     .single()
 
@@ -29,12 +31,14 @@ export default async function PublicEventPage({ params }: { params: { slug: stri
   return <Template event={event} />
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: Props) {
+  const { slug } = await params
   const admin = createAdminClient()
+
   const { data: event } = await admin
     .from('events')
     .select('name, description')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single()
 
   return {

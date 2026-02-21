@@ -2,11 +2,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
-type Params = { params: { token: string } }
+type Params = { params: Promise<{ token: string }> }
 
 // GET — fetch guest + event info by RSVP token
 // Public: no auth required
 export async function GET(_request: NextRequest, { params }: Params) {
+  const { token } = await params
   const admin = createAdminClient()
 
   const { data: guest, error } = await admin
@@ -33,14 +34,13 @@ export async function GET(_request: NextRequest, { params }: Params) {
         is_published
       )
     `)
-    .eq('rsvp_token', params.token)
+    .eq('rsvp_token', token)
     .single()
 
   if (error || !guest) {
     return NextResponse.json({ error: 'Invalid invitation link' }, { status: 404 })
   }
 
-  // Check event is published (unless already responded)
   const event = guest.events as any
   if (!event?.is_published && guest.rsvp_status === 'pending') {
     return NextResponse.json({ error: 'This event is not available yet' }, { status: 404 })
@@ -52,6 +52,7 @@ export async function GET(_request: NextRequest, { params }: Params) {
 // POST — submit RSVP response
 // Public: no auth required
 export async function POST(request: NextRequest, { params }: Params) {
+  const { token } = await params
   const admin = createAdminClient()
 
   let body: any
@@ -70,11 +71,10 @@ export async function POST(request: NextRequest, { params }: Params) {
     )
   }
 
-  // Check the token exists first
   const { data: existing } = await admin
     .from('guests')
     .select('id, rsvp_status')
-    .eq('rsvp_token', params.token)
+    .eq('rsvp_token', token)
     .single()
 
   if (!existing) {
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       notes: notes?.trim() || null,
       responded_at: new Date().toISOString(),
     })
-    .eq('rsvp_token', params.token)
+    .eq('rsvp_token', token)
     .select()
     .single()
 
