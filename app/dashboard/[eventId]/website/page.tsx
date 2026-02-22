@@ -11,27 +11,28 @@ const TEMPLATES = [
     id: 'elegant',
     name: 'Elegant',
     description: 'White & gold, timeless serif',
-    preview: '🤍',
+    color: '#B8860B',
+    bg: '#FAF9F7',
   },
   {
     id: 'rustic',
     name: 'Rustic',
     description: 'Warm earthy tones, vintage feel',
-    preview: '🌿',
+    color: '#78564E',
+    bg: '#F5F0E8',
   },
   {
     id: 'modern',
     name: 'Modern',
     description: 'Bold, black & white, graphic',
-    preview: '◼',
+    color: '#111111',
+    bg: '#F0F0F0',
   },
 ]
 
 export default function WebsitePage() {
-  // useParams() is correct for client components — no async needed
   const params = useParams()
   const eventId = params.eventId as string
-
   const supabase = createClient()
 
   const [event, setEvent]       = useState<any>(null)
@@ -42,11 +43,7 @@ export default function WebsitePage() {
 
   useEffect(() => {
     if (!eventId) return
-    supabase
-      .from('events')
-      .select('*')
-      .eq('id', eventId)
-      .single()
+    supabase.from('events').select('*').eq('id', eventId).single()
       .then(({ data }) => {
         if (data) {
           setEvent(data)
@@ -62,9 +59,8 @@ export default function WebsitePage() {
       .from('events')
       .update({ template, template_config: config })
       .eq('id', eventId)
-
     if (error) toast.error(error.message)
-    else toast.success('Saved!')
+    else toast.success('Changes saved')
     setSaving(false)
   }
 
@@ -75,56 +71,57 @@ export default function WebsitePage() {
       .from('events')
       .update({ is_published: newState, template, template_config: config })
       .eq('id', eventId)
-
     if (error) toast.error(error.message)
     else {
       setEvent({ ...event, is_published: newState })
-      toast.success(newState ? 'Event published! 🎉' : 'Event unpublished')
+      toast.success(newState ? 'Event is now live!' : 'Event unpublished')
     }
     setPublishing(false)
   }
 
-  if (!event) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50">
-        <div className="w-6 h-6 border-2 border-stone-300 border-t-stone-700 rounded-full animate-spin" />
-      </div>
-    )
-  }
+  if (!event) return (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: '#FDFAF6' }}>
+      <div style={{ width: '24px', height: '24px', border: '2px solid #EDE8E0', borderTopColor: '#C47A3A', borderRadius: '99px' }}
+        className="animate-spin" />
+    </div>
+  )
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const publicUrl = `${appUrl}/event/${event.slug}`
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen" style={{ background: '#FDFAF6', fontFamily: 'system-ui, sans-serif' }}>
 
       {/* Navbar */}
-      <nav className="bg-white border-b border-stone-200 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center gap-4">
-          <Link
-            href={`/dashboard/${eventId}`}
-            className="text-stone-400 hover:text-stone-700 text-sm transition-colors"
-          >
-            ← Back
+      <nav style={{ background: 'white', borderBottom: '1px solid #EDE8E0' }} className="px-6 py-4">
+        <div className="max-w-5xl mx-auto flex items-center gap-3">
+          <Link href={`/dashboard/${eventId}`} style={{ color: '#A08060', fontSize: '14px' }}
+            className="hover:opacity-70 transition-opacity flex items-center gap-1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Back
           </Link>
-          <span className="text-stone-800 font-semibold text-sm">Edit Website</span>
-          <div className="ml-auto flex gap-3">
-            <button
-              onClick={save}
-              disabled={saving}
-              className="text-sm border border-stone-200 px-4 py-2 rounded-lg hover:bg-stone-50 disabled:opacity-50 transition-colors"
-            >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D0C4B4" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
+          <span style={{ color: '#2D2016', fontWeight: '600', fontSize: '14px' }}>Edit Website</span>
+          <div className="ml-auto flex gap-2">
+            <button onClick={save} disabled={saving}
+              style={{ border: '1px solid #EDE8E0', background: 'white', color: '#7A6652', padding: '8px 18px', borderRadius: '99px', fontSize: '13px', cursor: 'pointer' }}
+              className="hover:border-stone-400 transition-colors disabled:opacity-50">
               {saving ? 'Saving...' : 'Save'}
             </button>
-            <button
-              onClick={togglePublish}
-              disabled={publishing}
-              className={`text-sm px-4 py-2 rounded-lg font-medium disabled:opacity-50 transition-colors ${
-                event.is_published
-                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                  : 'bg-green-600 text-white hover:bg-green-700'
-              }`}
-            >
+            <button onClick={togglePublish} disabled={publishing}
+              style={{
+                background: event.is_published ? '#FFEBEE' : '#2D2016',
+                color: event.is_published ? '#C62828' : 'white',
+                border: 'none',
+                padding: '8px 18px',
+                borderRadius: '99px',
+                fontSize: '13px',
+                cursor: 'pointer',
+                fontWeight: '500',
+              }}
+              className="hover:opacity-80 transition-opacity disabled:opacity-50">
               {publishing ? '...' : event.is_published ? 'Unpublish' : 'Publish'}
             </button>
           </div>
@@ -133,115 +130,138 @@ export default function WebsitePage() {
 
       <main className="max-w-5xl mx-auto px-6 py-8 grid sm:grid-cols-5 gap-8">
 
-        {/* Left: controls */}
-        <div className="sm:col-span-2 space-y-6">
+        {/* Left controls */}
+        <div className="sm:col-span-2 space-y-5">
 
           {/* Template picker */}
-          <div>
-            <h2 className="font-semibold text-stone-900 mb-3">Template</h2>
+          <div style={{ background: 'white', border: '1px solid #EDE8E0', borderRadius: '20px', padding: '20px' }}>
+            <h2 style={{ fontWeight: '600', color: '#2D2016', fontSize: '14px', marginBottom: '14px' }}>Template</h2>
             <div className="space-y-2">
               {TEMPLATES.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setTemplate(t.id)}
-                  className={`w-full text-left p-4 rounded-xl border transition-all ${
-                    template === t.id
-                      ? 'border-stone-900 bg-white shadow-sm'
-                      : 'border-stone-200 bg-white hover:border-stone-400'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{t.preview}</span>
-                    <div>
-                      <p className="font-medium text-stone-900 text-sm">{t.name}</p>
-                      <p className="text-xs text-stone-500">{t.description}</p>
-                    </div>
+                <button key={t.id} onClick={() => setTemplate(t.id)}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: '14px',
+                    borderRadius: '14px',
+                    border: template === t.id ? `2px solid ${t.color}` : '2px solid transparent',
+                    background: template === t.id ? t.bg : '#FDFAF6',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                  }}>
+                  <div style={{
+                    width: '32px', height: '32px', borderRadius: '8px',
+                    background: t.color, flexShrink: 0,
+                  }} />
+                  <div>
+                    <p style={{ fontWeight: '600', color: '#2D2016', fontSize: '13px', marginBottom: '2px' }}>{t.name}</p>
+                    <p style={{ color: '#A08060', fontSize: '12px' }}>{t.description}</p>
                   </div>
+                  {template === t.id && (
+                    <div className="ml-auto">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.color} strokeWidth="2.5" strokeLinecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Customization */}
-          <div>
-            <h2 className="font-semibold text-stone-900 mb-3">Customize</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs text-stone-500 mb-1">Main headline</label>
-                <input
-                  value={config.headline || ''}
-                  onChange={e => setConfig({ ...config, headline: e.target.value })}
-                  placeholder={event.name}
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-stone-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-stone-500 mb-1">Couple / Host names</label>
-                <input
-                  value={config.coupleNames || ''}
-                  onChange={e => setConfig({ ...config, coupleNames: e.target.value })}
-                  placeholder="Ana & João"
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-stone-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-stone-500 mb-1">Subtitle</label>
-                <input
-                  value={config.subtitle || ''}
-                  onChange={e => setConfig({ ...config, subtitle: e.target.value })}
-                  placeholder="We'd love for you to join us"
-                  className="w-full border border-stone-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-stone-500"
-                />
-              </div>
+          <div style={{ background: 'white', border: '1px solid #EDE8E0', borderRadius: '20px', padding: '20px' }}>
+            <h2 style={{ fontWeight: '600', color: '#2D2016', fontSize: '14px', marginBottom: '14px' }}>Customize</h2>
+            <div className="space-y-3">
+              {[
+                { key: 'headline', label: 'Headline', placeholder: event.name },
+                { key: 'coupleNames', label: 'Names', placeholder: 'Ana & João' },
+                { key: 'subtitle', label: 'Subtitle', placeholder: "We'd love for you to join us" },
+              ].map(field => (
+                <div key={field.key}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#A08060', marginBottom: '5px' }}>
+                    {field.label}
+                  </label>
+                  <input
+                    value={config[field.key] || ''}
+                    onChange={e => setConfig({ ...config, [field.key]: e.target.value })}
+                    placeholder={field.placeholder}
+                    style={{
+                      width: '100%',
+                      border: '1px solid #EDE8E0',
+                      borderRadius: '10px',
+                      padding: '8px 12px',
+                      fontSize: '13px',
+                      color: '#2D2016',
+                      background: '#FDFAF6',
+                      outline: 'none',
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#C47A3A'}
+                    onBlur={e => e.target.style.borderColor = '#EDE8E0'}
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Published link */}
           {event.is_published && (
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-              <p className="text-xs text-green-700 font-medium mb-1">✅ Live at:</p>
-              <a
-                href={publicUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-green-600 underline break-all"
-              >
+            <div style={{ background: '#F0FAF0', border: '1px solid #C8E6C9', borderRadius: '14px', padding: '14px' }}>
+              <p style={{ fontSize: '12px', color: '#2E7D32', fontWeight: '600', marginBottom: '4px' }}>
+                Live at:
+              </p>
+              <a href={publicUrl} target="_blank" rel="noopener noreferrer"
+                style={{ fontSize: '12px', color: '#388E3C', wordBreak: 'break-all', textDecoration: 'underline' }}>
                 {publicUrl}
               </a>
             </div>
           )}
         </div>
 
-        {/* Right: preview */}
+        {/* Right preview */}
         <div className="sm:col-span-3">
-          <h2 className="font-semibold text-stone-900 mb-3">Preview</h2>
-          <div
-            className="relative rounded-xl overflow-hidden border border-stone-200 shadow-sm bg-stone-100"
-            style={{ height: 520 }}
-          >
+          <h2 style={{ fontWeight: '600', color: '#2D2016', fontSize: '14px', marginBottom: '12px' }}>Preview</h2>
+          <div style={{
+            borderRadius: '20px',
+            overflow: 'hidden',
+            border: '1px solid #EDE8E0',
+            background: '#F5F0E8',
+            height: '520px',
+            position: 'relative',
+          }}>
             {event.is_published ? (
-              <iframe
-                src={publicUrl}
-                className="w-full h-full"
-                title="Event preview"
-              />
+              <iframe src={publicUrl} className="w-full h-full" title="Preview" />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center px-6">
-                  <p className="text-4xl mb-3">👁</p>
-                  <p className="text-stone-600 font-medium text-sm">Publish to see preview</p>
-                  <p className="text-stone-400 text-xs mt-1">
-                    Save your changes then click Publish
-                  </p>
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center',
+                textAlign: 'center', padding: '24px',
+              }}>
+                <div style={{
+                  width: '48px', height: '48px', background: 'white',
+                  borderRadius: '14px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', marginBottom: '14px',
+                  border: '1px solid #EDE8E0',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C47A3A" strokeWidth="1.8" strokeLinecap="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
                 </div>
+                <p style={{ fontWeight: '600', color: '#2D2016', fontSize: '14px', marginBottom: '6px' }}>
+                  Publish to see preview
+                </p>
+                <p style={{ color: '#A08060', fontSize: '12px' }}>
+                  Save your changes then click Publish
+                </p>
               </div>
             )}
           </div>
-          <p className="text-xs text-stone-400 mt-2 text-center">
-            Save then publish to see your live site
-          </p>
         </div>
-
       </main>
     </div>
   )
