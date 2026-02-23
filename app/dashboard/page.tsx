@@ -31,7 +31,7 @@ export default async function DashboardPage() {
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
             </div>
-            <span style={{ color: '#2D2016', fontWeight: '600', fontSize: '16px' }}>EventFlow</span>
+            <span style={{ color: '#2D2016', fontWeight: '600', fontSize: '16px' }}>EventsDock</span>
           </div>
           <div className="flex items-center gap-5">
             <span style={{ color: '#A08060', fontSize: '13px' }} className="hidden sm:block">{user.email}</span>
