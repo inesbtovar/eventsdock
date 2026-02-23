@@ -38,9 +38,8 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-5">
             <span style={{ color: '#A08060', fontSize: '13px' }} className="hidden sm:block">{user.email}</span>
            <div className="flex items-center gap-5">
-  <span style={{ color: '#A08060', fontSize: '13px' }} className="hidden sm:block">{user.email}</span>
-  <SignOutButton />
-</div>
+            <SignOutButton />
+          </div>
             </div>
         </div>
       </nav>
