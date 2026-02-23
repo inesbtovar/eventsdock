@@ -2,6 +2,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import SignOutButton from '@/components/dashboard/SignOutButton'
+
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -35,11 +37,11 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-5">
             <span style={{ color: '#A08060', fontSize: '13px' }} className="hidden sm:block">{user.email}</span>
-            import SignOutButton from '@/components/dashboard/SignOutButton'
-
-// then in the JSX:
-<SignOutButton />
-          </div>
+           <div className="flex items-center gap-5">
+  <span style={{ color: '#A08060', fontSize: '13px' }} className="hidden sm:block">{user.email}</span>
+  <SignOutButton />
+</div>
+            </div>
         </div>
       </nav>
 
