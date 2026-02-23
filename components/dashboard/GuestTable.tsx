@@ -250,67 +250,85 @@ export default function GuestTable({ guests: initial, eventSlug, appUrl }: Props
 
                   {/* Actions */}
                   <td style={{ padding: '14px 20px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                      {/* Copy link */}
-                      <button onClick={() => copyLink(guest.rsvp_token)} style={{
-                        background: copied === guest.rsvp_token ? '#E8F5E9' : '#F5F0E8',
-                        color: copied === guest.rsvp_token ? '#2E7D32' : '#7A6652',
-                        border: 'none', padding: '5px 11px', borderRadius: '99px',
-                        fontSize: '12px', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                        transition: 'all 0.15s',
-                      }}>
-                        {copied === guest.rsvp_token
-                          ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-                          : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                        }
-                        {copied === guest.rsvp_token ? 'Copied' : 'Copy'}
-                      </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
 
-                      {/* WhatsApp */}
-                      {guest.phone && (
-                        <a href={whatsappLink(guest)} target="_blank" rel="noopener noreferrer" style={{
-                          background: '#E8F5E9', color: '#2E7D32',
-                          padding: '5px 11px', borderRadius: '99px',
-                          fontSize: '12px', textDecoration: 'none',
-                          display: 'flex', alignItems: 'center', gap: '4px',
-                        }} className="hover:opacity-80 transition-opacity">
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                          </svg>
-                          WA
-                        </a>
-                      )}
+                      {/* Send invite row — the main action */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {guest.rsvp_status === 'pending' && (
+                          <span style={{ fontSize: '11px', color: '#C47A3A', fontWeight: '500', marginRight: '2px' }}>
+                            Send invite:
+                          </span>
+                        )}
 
-                      {/* Edit */}
-                      <button onClick={() => openEdit(guest)} style={{
-                        background: '#F5F0E8', color: '#7A6652',
-                        border: 'none', padding: '5px 11px', borderRadius: '99px',
-                        fontSize: '12px', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                      }} className="hover:opacity-80 transition-opacity">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                        </svg>
-                        Edit
-                      </button>
+                        {/* WhatsApp — primary if they have a phone */}
+                        {guest.phone ? (
+                          <a href={whatsappLink(guest)} target="_blank" rel="noopener noreferrer" style={{
+                            background: '#2D2016', color: 'white',
+                            padding: '6px 14px', borderRadius: '99px',
+                            fontSize: '12px', fontWeight: '500', textDecoration: 'none',
+                            display: 'flex', alignItems: 'center', gap: '5px',
+                          }} className="hover:opacity-80 transition-opacity">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                            Send via WhatsApp
+                          </a>
+                        ) : (
+                          /* No phone — copy link is the primary action */
+                          <button onClick={() => copyLink(guest.rsvp_token)} style={{
+                            background: copied === guest.rsvp_token ? '#E8F5E9' : '#2D2016',
+                            color: copied === guest.rsvp_token ? '#2E7D32' : 'white',
+                            border: 'none', padding: '6px 14px', borderRadius: '99px',
+                            fontSize: '12px', fontWeight: '500', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '5px',
+                            transition: 'all 0.15s',
+                          }}>
+                            {copied === guest.rsvp_token
+                              ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            }
+                            {copied === guest.rsvp_token ? 'Link copied!' : 'Copy invite link'}
+                          </button>
+                        )}
 
-                      {/* Delete */}
-                      <button onClick={() => setDeleting(guest)} style={{
-                        background: '#FFF0F0', color: '#C62828',
-                        border: 'none', padding: '5px 11px', borderRadius: '99px',
-                        fontSize: '12px', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '4px',
-                      }} className="hover:opacity-80 transition-opacity">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                          <polyline points="3 6 5 6 21 6"/>
-                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-                          <path d="M10 11v6"/><path d="M14 11v6"/>
-                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-                        </svg>
-                        Delete
-                      </button>
+                        {/* If they have a phone, also show copy as secondary */}
+                        {guest.phone && (
+                          <button onClick={() => copyLink(guest.rsvp_token)} style={{
+                            background: copied === guest.rsvp_token ? '#E8F5E9' : '#F5F0E8',
+                            color: copied === guest.rsvp_token ? '#2E7D32' : '#7A6652',
+                            border: 'none', padding: '6px 12px', borderRadius: '99px',
+                            fontSize: '12px', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: '4px',
+                            transition: 'all 0.15s',
+                          }} title="Copy the RSVP link to send via any other app">
+                            {copied === guest.rsvp_token
+                              ? <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                            }
+                            {copied === guest.rsvp_token ? 'Copied!' : 'Copy link'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Secondary actions row */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button onClick={() => openEdit(guest)} style={{
+                          background: 'none', color: '#A08060', border: 'none',
+                          padding: '3px 0', fontSize: '12px', cursor: 'pointer',
+                          textDecoration: 'underline', textDecorationColor: '#D0C4B4',
+                        }} className="hover:opacity-70 transition-opacity">
+                          Edit
+                        </button>
+                        <span style={{ color: '#D0C4B4', fontSize: '12px' }}>·</span>
+                        <button onClick={() => setDeleting(guest)} style={{
+                          background: 'none', color: '#C08080', border: 'none',
+                          padding: '3px 0', fontSize: '12px', cursor: 'pointer',
+                          textDecoration: 'underline', textDecorationColor: '#E0C4C4',
+                        }} className="hover:opacity-70 transition-opacity">
+                          Remove
+                        </button>
+                      </div>
+
                     </div>
                   </td>
                 </tr>

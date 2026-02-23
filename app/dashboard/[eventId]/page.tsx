@@ -152,7 +152,7 @@ export default async function EventPage({ params }: Props) {
             <div>
               <h2 style={{ fontWeight: '600', color: '#2D2016', fontSize: '16px' }}>Guest List</h2>
               <p style={{ color: '#A08060', fontSize: '12px', marginTop: '2px' }}>
-                Import Excel/CSV or share individual RSVP links via WhatsApp
+                Add your guests, then send each person their personal RSVP link via WhatsApp or copy it manually
               </p>
             </div>
             <GuestImport eventId={event.id} />
