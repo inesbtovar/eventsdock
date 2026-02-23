@@ -35,12 +35,10 @@ export default async function DashboardPage() {
           </div>
           <div className="flex items-center gap-5">
             <span style={{ color: '#A08060', fontSize: '13px' }} className="hidden sm:block">{user.email}</span>
-            <form action="/api/auth/signout" method="POST">
-              <button style={{ color: '#7A6652', fontSize: '13px', background: 'none', border: 'none', cursor: 'pointer' }}
-                className="hover:opacity-70 transition-opacity">
-                Sign out
-              </button>
-            </form>
+            import SignOutButton from '@/components/dashboard/SignOutButton'
+
+// then in the JSX:
+<SignOutButton />
           </div>
         </div>
       </nav>
