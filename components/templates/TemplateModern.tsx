@@ -77,7 +77,7 @@ export default function TemplateModern({ event }: { event: Event }) {
       </div>
 
       <div className="border-t border-stone-100 py-6 px-16 flex justify-between items-center text-xs text-stone-400">
-        <span>EventFlow</span>
+        <span>EventsDock</span>
         <span>{event.name}</span>
       </div>
     </div>

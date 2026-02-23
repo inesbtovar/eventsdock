@@ -101,7 +101,7 @@ export default function TemplateElegant({ event }: { event: Event }) {
       {/* Footer */}
       <div className="border-t border-stone-200 py-8 text-center">
         <p className="text-xs text-stone-400 uppercase tracking-widest">
-          Made with EventFlow
+          Made with EventsDock
         </p>
       </div>
     </div>

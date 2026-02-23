@@ -17,7 +17,7 @@ export default function LandingPage() {
             </svg>
           </div>
           <span style={{ color: '#2D2016', fontFamily: "'Georgia', serif", fontSize: '18px', fontWeight: '600' }}>
-            Eventful
+            EventsDock
           </span>
         </div>
         <div className="flex items-center gap-6">
@@ -239,7 +239,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ borderTop: '1px solid #EDE8E0', background: 'white' }} className="py-8 text-center">
         <p style={{ color: '#B0A090', fontSize: '13px', fontFamily: 'system-ui, sans-serif' }}>
-          © {new Date().getFullYear()} Eventful. Made with care for weddings, birthdays & everything in between.
+          © {new Date().getFullYear()} EventsDock. Made with care for weddings, birthdays & everything in between.
         </p>
       </footer>
 

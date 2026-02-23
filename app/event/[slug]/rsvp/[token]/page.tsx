@@ -202,7 +202,7 @@ export default function RSVPPage() {
         </div>
 
         <p className="text-center text-xs text-stone-400 mt-6">
-          Powered by EventFlow
+          Powered by EventsDock
         </p>
       </div>
     </div>

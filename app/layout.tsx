@@ -9,7 +9,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 const geist = Geist({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'EventFlow — Event Planning Made Simple',
+  title: 'EventsDock — Event Planning Made Simple',
   description: 'Manage guests, send invitations, and create beautiful event websites in one place.',
 }
 

@@ -95,7 +95,7 @@ export default function TemplateRustic({ event }: { event: Event }) {
       </div>
 
       <div className="border-t border-stone-300 py-6 text-center text-xs text-stone-400">
-        Made with EventFlow
+        Made with EventsDock
       </div>
     </div>
   )

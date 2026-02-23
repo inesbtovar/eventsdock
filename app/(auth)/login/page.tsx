@@ -36,7 +36,7 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold text-stone-900 tracking-tight">
-            EventFlow
+            EventsDock
           </Link>
           <p className="text-stone-500 text-sm mt-2">Sign in to your account</p>
         </div>

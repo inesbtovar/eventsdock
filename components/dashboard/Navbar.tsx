@@ -40,7 +40,7 @@ export default function Navbar({ email, backHref, backLabel, title, children }: 
           </>
         ) : (
           <Link href="/dashboard" className="text-xl font-bold text-stone-900 tracking-tight">
-            EventFlow
+            EventsDock
           </Link>
         )}
 
