@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { nanoid } from 'nanoid'
+import { canAddGuest } from '@/lib/plans'
 
 // GET — list guests for an event
 export async function GET(request: NextRequest) {
@@ -15,6 +16,12 @@ export async function GET(request: NextRequest) {
   const { data: event } = await supabase
     .from('events').select('id').eq('id', eventId).eq('user_id', user.id).single()
   if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+
+    // Check guest limit
+const { allowed, reason } = await canAddGuest(eventId)
+if (!allowed) {
+  return NextResponse.json({ error: reason, upgrade: true }, { status: 403 })
+}
 
   const { data, error } = await supabase
     .from('guests').select('*').eq('event_id', eventId).order('name')

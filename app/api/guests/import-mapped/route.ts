@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { nanoid } from 'nanoid'
+import { canAddGuest } from '@/lib/plans'
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,6 +21,12 @@ export async function POST(request: NextRequest) {
     const { data: event } = await supabase
       .from('events').select('id').eq('id', eventId).eq('user_id', user.id).single()
     if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+
+    // Check guest limit
+    const { allowed, reason } = await canAddGuest(eventId)
+    if (!allowed) {
+      return NextResponse.json({ error: reason, upgrade: true }, { status: 403 })
+    }
 
     const guests = rawGuests
       .filter((g: any) => g.name?.trim())

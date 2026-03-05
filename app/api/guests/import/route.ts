@@ -1,8 +1,9 @@
 // app/api/guests/import/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { nanoid } from 'nanoid'
+import { canAddGuest } from '@/lib/plans'
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -30,26 +31,70 @@ export async function POST(request: NextRequest) {
     .eq('id', eventId)
     .eq('user_id', user.id)
     .single()
-
   if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 })
 
-  // Parse Excel/CSV
-  let rows: Record<string, unknown>[]
+  // Check guest limit
+  const { allowed, reason } = await canAddGuest(eventId)
+  if (!allowed) {
+    return NextResponse.json({ error: reason, upgrade: true }, { status: 403 })
+  }
+
+  // Parse Excel/CSV with ExcelJS
+  let rows: Record<string, unknown>[] = []
   try {
-    const buffer = await file.arrayBuffer()
-    const workbook = XLSX.read(buffer, { type: 'buffer' })
-    const sheet = workbook.Sheets[workbook.SheetNames[0]]
-    rows = XLSX.utils.sheet_to_json(sheet) as Record<string, unknown>[]
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const workbook = new ExcelJS.Workbook()
+
+    const fileName = file.name.toLowerCase()
+    if (fileName.endsWith('.csv')) {
+      const { Readable } = await import('stream')
+      const stream = Readable.from(buffer.toString('utf-8').split('\n').join('\n'))
+      await workbook.csv.read(stream)
+    } else {
+      await workbook.xlsx.load(buffer)
+    }
+
+    const sheet = workbook.worksheets[0]
+    if (!sheet) throw new Error('No worksheet found')
+
+    const headers: string[] = []
+    sheet.getRow(1).eachCell({ includeEmpty: true }, (cell, colIndex) => {
+      headers[colIndex - 1] = cell.value?.toString().trim() ?? ''
+    })
+
+    sheet.eachRow((row, rowIndex) => {
+      if (rowIndex === 1) return
+      const obj: Record<string, unknown> = {}
+      row.eachCell({ includeEmpty: true }, (cell, colIndex) => {
+        const header = headers[colIndex - 1]
+        if (header) {
+          const val = cell.value
+          if (val === null || val === undefined) {
+            obj[header] = ''
+          } else if (typeof val === 'object' && 'text' in val) {
+            obj[header] = (val as any).text
+          } else if (typeof val === 'object' && 'result' in val) {
+            obj[header] = (val as any).result
+          } else {
+            obj[header] = val
+          }
+        }
+      })
+      if (Object.values(obj).some(v => v !== '' && v != null)) {
+        rows.push(obj)
+      }
+    })
   } catch {
-    return NextResponse.json({ error: 'Could not parse file. Please upload a valid .xlsx, .xls or .csv file.' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Could not parse file. Please upload a valid .xlsx, .xls or .csv file.' },
+      { status: 400 }
+    )
   }
 
   if (rows.length === 0) {
     return NextResponse.json({ error: 'The file appears to be empty.' }, { status: 400 })
   }
 
-  // Smart column detection — tries many possible header names
-  // Works with messy Excel files that have lots of other columns
   function detect(row: Record<string, unknown>, candidates: string[]): string {
     const keys = Object.keys(row)
     for (const candidate of candidates) {
