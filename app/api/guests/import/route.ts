@@ -42,17 +42,18 @@ export async function POST(request: NextRequest) {
   // Parse Excel/CSV with ExcelJS
   let rows: Record<string, unknown>[] = []
   try {
-    const buffer = Buffer.from(await file.arrayBuffer())
+    const buffer = await file.arrayBuffer()
     const workbook = new ExcelJS.Workbook()
 
     const fileName = file.name.toLowerCase()
     if (fileName.endsWith('.csv')) {
-      const { Readable } = await import('stream')
-      const stream = Readable.from(buffer.toString('utf-8').split('\n').join('\n'))
-      await workbook.csv.read(stream)
-    } else {
-      await workbook.xlsx.load(buffer)
-    }
+  const { Readable } = await import('stream')
+  const text = new TextDecoder().decode(buffer)
+  const stream = Readable.from(text)
+  await workbook.csv.read(stream)
+} else {
+  await workbook.xlsx.load(buffer)
+}
 
     const sheet = workbook.worksheets[0]
     if (!sheet) throw new Error('No worksheet found')

@@ -148,11 +148,3 @@ export default function PricingPage() {
     </div>
   )
 }
-```
-
----
-
-Also add these two env variables to Vercel (you need them on the frontend too):
-```
-NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID = price_...
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID     = price_...
