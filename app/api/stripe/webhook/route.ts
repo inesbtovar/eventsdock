@@ -7,14 +7,15 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2026-02-25.clover' as any,
 })
 
-// Use service role key here — webhook runs outside user session
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Map Stripe price IDs to plan names
 function getPlanFromPriceId(priceId: string): string {
+  console.log('getPlanFromPriceId:', priceId)
+  console.log('STARTER_PRICE_ID:', process.env.STRIPE_STARTER_PRICE_ID)
+  console.log('PRO_PRICE_ID:', process.env.STRIPE_PRO_PRICE_ID)
   if (priceId === process.env.STRIPE_STARTER_PRICE_ID) return 'starter'
   if (priceId === process.env.STRIPE_PRO_PRICE_ID) return 'pro'
   return 'free'
@@ -22,7 +23,12 @@ function getPlanFromPriceId(priceId: string): string {
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
-  const signature = request.headers.get('stripe-signature')!
+  const signature = request.headers.get('stripe-signature')
+
+  if (!signature) {
+    console.error('WEBHOOK: No stripe-signature header')
+    return NextResponse.json({ error: 'No signature' }, { status: 400 })
+  }
 
   let event: Stripe.Event
 
@@ -33,112 +39,94 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!
     )
   } catch (err) {
-    console.error('Webhook signature verification failed:', err)
+    console.error('WEBHOOK: Signature verification failed:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  console.log('Webhook event:', event.type)
+  console.log('WEBHOOK: Received event:', event.type, event.id)
 
-  switch (event.type) {
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
 
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session
+    console.log('WEBHOOK: Session metadata:', session.metadata)
+    console.log('WEBHOOK: Session customer:', session.customer)
+    console.log('WEBHOOK: Session subscription:', session.subscription)
 
-      const userId = session.metadata?.user_id
-      if (!userId) {
-        console.error('No user_id in session metadata')
-        break
-      }
+    const userId = session.metadata?.user_id
 
-      // Get the subscription to find the price
-      const subscriptionId = session.subscription as string
+    if (!userId) {
+      console.error('WEBHOOK ERROR: No user_id in session metadata — checkout route is missing metadata: { user_id }')
+      return NextResponse.json({ error: 'No user_id in metadata' }, { status: 200 }) // return 200 so Stripe doesn't retry
+    }
+
+    const subscriptionId = session.subscription as string
+
+    let plan = 'starter' // fallback
+
+    try {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId)
       const priceId = subscription.items.data[0].price.id
-      const plan = getPlanFromPriceId(priceId)
+      plan = getPlanFromPriceId(priceId)
+      console.log('WEBHOOK: Resolved plan:', plan, 'from priceId:', priceId)
+    } catch (err) {
+      console.error('WEBHOOK: Failed to retrieve subscription, using fallback plan:', err)
+    }
 
-      const { error } = await supabase
+    console.log(`WEBHOOK: Updating user ${userId} to plan ${plan}`)
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({
+        plan,
+        stripe_customer_id: session.customer as string,
+        stripe_subscription_id: subscriptionId,
+      })
+      .eq('id', userId)
+      .select()
+
+    if (error) {
+      console.error('WEBHOOK ERROR: Supabase update failed:', error)
+      return NextResponse.json({ error: 'DB update failed' }, { status: 500 })
+    }
+
+    console.log('WEBHOOK: Supabase update result:', data)
+
+    if (!data || data.length === 0) {
+      console.error(`WEBHOOK ERROR: No row found in profiles for user_id: ${userId}`)
+      // Try to insert if row doesn't exist
+      const { error: insertError } = await supabase
         .from('profiles')
-        .update({
+        .insert({
+          id: userId,
           plan,
           stripe_customer_id: session.customer as string,
           stripe_subscription_id: subscriptionId,
         })
-        .eq('id', userId)
-
-      if (error) {
-        console.error('Failed to update user plan:', error)
+      if (insertError) {
+        console.error('WEBHOOK ERROR: Insert also failed:', insertError)
       } else {
-        console.log(`Updated user ${userId} to plan: ${plan}`)
+        console.log('WEBHOOK: Inserted new profile row for user:', userId)
       }
-      break
     }
+  }
 
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription
+  if (event.type === 'customer.subscription.deleted') {
+    const subscription = event.data.object as Stripe.Subscription
 
-      // Find user by stripe_subscription_id
-      const { data: userData, error: fetchError } = await supabase
+    const { data: userData, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('stripe_subscription_id', subscription.id)
+      .single()
+
+    if (fetchError || !userData) {
+      console.error('WEBHOOK: Could not find user for deleted subscription:', subscription.id)
+    } else {
+      await supabase
         .from('profiles')
-        .select('id')
-        .eq('stripe_subscription_id', subscription.id)
-        .single()
-
-      if (fetchError || !userData) {
-        console.error('Could not find user for subscription:', subscription.id)
-        break
-      }
-
-      const priceId = subscription.items.data[0].price.id
-      const plan = getPlanFromPriceId(priceId)
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ plan })
+        .update({ plan: 'free', stripe_subscription_id: null })
         .eq('id', userData.id)
-
-      if (error) {
-        console.error('Failed to update plan on subscription update:', error)
-      } else {
-        console.log(`Updated user ${userData.id} to plan: ${plan}`)
-      }
-      break
-    }
-
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object as Stripe.Subscription
-
-      const { data: userData, error: fetchError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('stripe_subscription_id', subscription.id)
-        .single()
-
-      if (fetchError || !userData) {
-        console.error('Could not find user for subscription:', subscription.id)
-        break
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          plan: 'free',
-          stripe_subscription_id: null,
-        })
-        .eq('id', userData.id)
-
-      if (error) {
-        console.error('Failed to downgrade user to free:', error)
-      } else {
-        console.log(`Downgraded user ${userData.id} to free`)
-      }
-      break
-    }
-
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object as Stripe.Invoice
-      console.log('Payment failed for customer:', invoice.customer)
-      // Optionally: send an email, flag the account, etc.
-      break
+      console.log('WEBHOOK: Downgraded user', userData.id, 'to free')
     }
   }
 
